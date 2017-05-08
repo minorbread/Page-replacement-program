@@ -42,7 +42,7 @@ struct instr_flow_head{
 	int num;//指令流中指令数；
 	struct instr_flow *next;//指向下一条指令
 };
-struct instr_flow_head iflow_head;
+struct instr_flow_head iflow_head; 
 
 int pfail_num = 0;//缺页数
 int cur_replace_alg = 1;//当前置换算法，默认为OPT
