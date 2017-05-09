@@ -89,9 +89,7 @@ jQuery(document).ready(function($) {
 		}
 		//指令数组初始化
 		for(i = 0; i < Page.TOTAL_INSTR; i++){
-			instrArray.push(new InstrItem(i, i / Page.INSTR_PER_PAGE, i % Page.INSTR_PER_PAGE, 0));
-      console.log(i / Page.INSTR_PER_PAGE);
-      console.log(i % Page.INSTR_PER_PAGE);
+			instrArray.push(new InstrItem(i, Math.floor(i / Page.INSTR_PER_PAGE), i % Page.INSTR_PER_PAGE, 0));
 		}
 		//指令流头初始化
 		iflowHead.num = 0;
@@ -110,9 +108,13 @@ jQuery(document).ready(function($) {
     var total = 0,
          s;
 
-    s = Math.floor(Math.random() * (Page.TOTAL_INSTR - 0 + 1)) + 0;
+    s = Math.floor(Math.random() * Page.TOTAL_INSTR);
+/*    for (var i = 0; i < 2000; i++) {
+      if(Math.floor((Math.random() * Page.TOTAL_INSTR))) {
+        console.log('hi');
+      }
+    }*/
     total += addToFlow(s);
-
     //如果s不是最后一条，顺序执行下一条指令
     if(s < Page.TOTAL_INSTR - 1){
       total += addToFlow(s+1);
@@ -121,7 +123,7 @@ jQuery(document).ready(function($) {
     while(total < Page.TOTAL_INSTR) {
       //如果s不是0，则跳转到前地址部分[0, s-1]，然后顺序执行
       if (s > 0) {
-        s = Math.floor(Math.random() * (s - 0 + 1)) + 0;
+        s = Math.floor(Math.random() * s);
         total += addToFlow(s);
         //如果s不是最后一条，顺序执行下一条指令
         if (s < Page.TOTAL_INSTR - 1) {
@@ -131,7 +133,7 @@ jQuery(document).ready(function($) {
       //如果s+1不是最后一条，则跳转到后地址部分[s+2, 319],然后顺序执行
       if(s < Page.TOTAL_INSTR - 2){
         //产生[s+2,320)的随机数
-        s = Math.floor(Math.random() * (Page.TOTAL_INSTR - s + 2 + 1)) + 0;
+        s = Math.floor(Math.random() * (Page.TOTAL_INSTR - (s + 2))) + s + 2;
         total += addToFlow(s);
         //如果s不是最后一条，顺序执行下一条指令
         if(s < Page.TOTAL_INSTR - 1){
@@ -149,6 +151,9 @@ jQuery(document).ready(function($) {
    * 如该指令在指令流中不存在，返回1，否则返回0
    */
   function addToFlow(n) {
+    if (n > 319) {
+      console.log(n);
+    }
     var ret = 0;
     var tail = null;
     var ptr = null;
@@ -159,10 +164,11 @@ jQuery(document).ready(function($) {
     tail.next = null;
 
     //判断返回值，如指令流中已有该指令，返回值为0，否则返回1
-    if(instrArray[n].inflow == 0){
-      instrArray[n].inflow = 1;
-      ret = 1;
-    }
+      if(instrArray[n].inflow == 0){
+        instrArray[n].inflow = 1;
+        ret = 1;
+      }
+ 
 
     //将指令加入链表，当指令流头为空时，直接加到指令流头后面
     //否则，将其加入到链表最后面
@@ -365,6 +371,7 @@ jQuery(document).ready(function($) {
         j = 0;
 
     // 虚页表初始化
+    pageTable.length = 0;
     for(i = 0; i < Page.VM_PAGE; i++){
       pageTable.push(new VageItem(i, 0, 0, -1));
     }
@@ -382,5 +389,12 @@ jQuery(document).ready(function($) {
   genInstrFlow();
   curReplaceAlg = Page.OPT;
   run();
+  curReplaceAlg = Page.FIFO;
+  resetPageTable();
+  run();
+  curReplaceAlg = Page.LRU;
+  resetPageTable();
+  run();
+  clean();
 
 });
