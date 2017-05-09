@@ -19,9 +19,9 @@ jQuery(document).ready(function($) {
       instrArray = [],
       pfailNum,
       curReplaceAlg;
-    	pageTable.length = Page.VM_PAGE;			 
-    	ppageBitmap.length = Page.PM_PAGE;		 
-    	instrArray.length = Page.TOTAL_INSTR;
+    	// pageTable.length = Page.VM_PAGE;			 
+    	// ppageBitmap.length = Page.PM_PAGE;		 
+    	// instrArray.length = Page.TOTAL_INSTR;
     	pfailNum = 0;
     	curReplaceAlg = 1;
 
@@ -90,6 +90,8 @@ jQuery(document).ready(function($) {
 		//指令数组初始化
 		for(i = 0; i < Page.TOTAL_INSTR; i++){
 			instrArray.push(new InstrItem(i, i / Page.INSTR_PER_PAGE, i % Page.INSTR_PER_PAGE, 0));
+      console.log(i / Page.INSTR_PER_PAGE);
+      console.log(i % Page.INSTR_PER_PAGE);
 		}
 		//指令流头初始化
 		iflowHead.num = 0;
@@ -188,7 +190,7 @@ jQuery(document).ready(function($) {
     chip = 0;
     // 指令流中当前指令
     cur = iflowHead.next;
-    while(cur != NULL) {
+    while(cur != null) {
       //首先判断该指令是否物理内存中
       vpage = cur.instr.vpage;
       offset = cur.instr.offset;
@@ -202,11 +204,11 @@ jQuery(document).ready(function($) {
         //如果已经在内存中，根据置换算法更新页表项中time信息
         //三种算法中，仅LRU需要更新
         switch(curReplaceAlg){
-          case LRU:
+          case Page.LRU:
             pageTable[vpage].time = chip;
             break;
-          case OPT:
-          case FIFO:
+          case Page.OPT:
+          case Page.FIFO:
           default:
             break;
         }
@@ -215,8 +217,15 @@ jQuery(document).ready(function($) {
       cur = cur.next;
       chip++;
     }
+    console.log(pfailNum / iflowHead.num);
   }
 
+  /**
+   * 为当前指令分配物理页，返回物理页号，并更新页表及物理页表位图
+   * @param  { Object } cur  [description]
+   * @param  { number } chip [description]
+   * @return {[type]}      [description]
+   */
   function allocPPage(cur, chip) {
     var i,
         ppage,
@@ -233,13 +242,13 @@ jQuery(document).ready(function($) {
     //如果没有直接可用的物理内存，需要置换
     if(ppage == -1) {
       switch (curReplaceAlg) {
-        case OPT:
+        case Page.OPT:
           ppage = opt(cur);
           break;
-        case  FIFO:
+        case Page.FIFO:
           ppage = fifo(cur);
           break;
-        case LRU:
+        case Page.LRU:
           ppage = lru(cur);
           break;
         default:
@@ -252,15 +261,15 @@ jQuery(document).ready(function($) {
     pageTable[vpage].pmn = ppage;//对应的实页号
     pageTable[vpage].exist = 1;//存在位 置1
     switch (curReplaceAlg) {
-      case OPT:
+      case Page.OPT:
         break;
-      case  FIFO:
+      case Page.FIFO:
         //该页首次进入内存时才更新
         if(pageTable[vpage].time == -1){
           pageTable[vpage].time = chip;
         }
         break;
-      case LRU:
+      case Page.LRU:
         pageTable[vpage].time = chip;
         break;
       default:
@@ -307,10 +316,71 @@ jQuery(document).ready(function($) {
       }
     }
     return ret;
+  } 
+
+  //LRU置换算法，从ppage_bitmap中找time值最小的页面(最久未被使用)置换出去
+  function lru(cur) {
+    var minTime = 1000000,
+        ppage = -1,
+        i;
+    for(i = 0; i < Page.PM_PAGE; i++) {
+      if(ppageBitmap[i] && ppageBitmap[i].time < minTime){
+        minTime = ppageBitmap[i].time;
+        ppage = i;
+      }
+    }
+    return ppage;
   }
 
-	initData();
-  curReplaceAlg = Page.OPT;
+  function fifo(cur) {
+    var minTime = 1000000,
+        ppage = -1,
+        i;
+    for(i = 0; i < Page.PM_PAGE; i++) {
+      if(ppageBitmap[i] && ppageBitmap[i].time < minTime){
+        minTime = ppageBitmap[i].time;
+        ppage = i;
+      }
+    }
+    return ppage;
+  }
 
+  function clean() {
+    ptr = null;
+    cur = null;
+
+    ptr = iflowHead.next;
+    cur = iflowHead.next;
+
+    while(ptr != null) {
+      cur = ptr;
+      ptr = ptr.next;
+      cur = null;
+    }
+
+  }
+
+  function resetPageTable() {
+    var i = 0,
+        j = 0;
+
+    // 虚页表初始化
+    for(i = 0; i < Page.VM_PAGE; i++){
+      pageTable.push(new VageItem(i, 0, 0, -1));
+    }
+
+    //物理页位图初始化
+    for(i = 0; i < Page.PM_PAGE; i++){
+      ppageBitmap[i] = null;//没有被使用
+    }
+    pfailNum = 0;
+  }
+
+  //初始化数据
+	initData();
+  //产生指令流
+  genInstrFlow();
+  curReplaceAlg = Page.OPT;
+  run();
 
 });
