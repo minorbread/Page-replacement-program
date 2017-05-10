@@ -1,10 +1,10 @@
 jQuery(document).ready(function($) {
 
 	var Page = {
-		VM_PAGE: 32,						/*虚页面数，共32*/
 		PM_PAGE: 4,							/*物理页面数，共4*/
-		TOTAL_INSTR: 320,				/*指令条数，320*/
+    VM_PAGE: 32,            /*虚页面数，共32*/
 		INSTR_PER_PAGE: 10,			/*每页指令数*/
+    TOTAL_INSTR: 320,       /*指令条数，320*/
 		OPT: 1,									/*最佳算法*/
 		FIFO: 2,								/*先进先出算法*/
 		LRU: 3									/*最近很少使用算法*/
@@ -19,10 +19,6 @@ jQuery(document).ready(function($) {
       instrArray = [],
     	pfailNum = 0,
     	curReplaceAlg = 1;
-      num = 1,
-      num1,
-      num2,
-      num3;
 
 	/**
 	 * 页表项数据结构
@@ -70,7 +66,6 @@ jQuery(document).ready(function($) {
 	var	iflowHead = new InstrFlowHead();
 
 
-
 	/**
 	 * 数据初始化
 	 */
@@ -89,8 +84,8 @@ jQuery(document).ready(function($) {
 			ppageBitmap[i] = null;			/*没有被使用*/
 		}
 		//指令数组初始化
-		for(i = 0; i < Page.TOTAL_INSTR; i++){
-			instrArray.push(new InstrItem(i, Math.floor(i / Page.INSTR_PER_PAGE), i % Page.INSTR_PER_PAGE, 0));
+    for(i = 0; i < Page.TOTAL_INSTR; i++){
+      instrArray.push(new InstrItem(i, Math.floor(i / Page.INSTR_PER_PAGE), i % Page.INSTR_PER_PAGE, 0));
 		}
 		//指令流头初始化
 		iflowHead.num = 0;
@@ -110,6 +105,7 @@ jQuery(document).ready(function($) {
          s;
 
     s = Math.floor(Math.random() * Page.TOTAL_INSTR);
+  
     total += addToFlow(s);
     //如果s不是最后一条，顺序执行下一条指令
     if(s < Page.TOTAL_INSTR - 1){
@@ -147,9 +143,6 @@ jQuery(document).ready(function($) {
    * 如该指令在指令流中不存在，返回1，否则返回0
    */
   function addToFlow(n) {
-    if (n > 319) {
-      console.log(n);
-    }
     var ret = 0;
     var tail = null;
     var ptr = null;
@@ -183,6 +176,9 @@ jQuery(document).ready(function($) {
     return ret;
   }
 
+  /**
+   * 运行程序，在发生页面置换时，根据当前置换算法选择置换页面
+   */
   function run() {
     var vpage,
         offset,
@@ -219,7 +215,6 @@ jQuery(document).ready(function($) {
       cur = cur.next;
       chip++;
     }
-    // console.log(pfailNum / iflowHead.num);
     return (pfailNum / iflowHead.num);
   }
 
@@ -288,6 +283,11 @@ jQuery(document).ready(function($) {
     return ppage;
   }
 
+  /**
+   * 最优置换算法opt，寻找需要替换的页
+   * @param  {Object} cur 
+   * @return {[Number]}     
+   */
   function opt(cur) {
     var found = 0,
         ppageHash = [],
@@ -321,7 +321,11 @@ jQuery(document).ready(function($) {
     return ret;
   } 
 
-  //LRU置换算法，从ppage_bitmap中找time值最小的页面(最久未被使用)置换出去
+  /**
+   * LRU置换算法，从ppage_bitmap中找time值最小的页面(最久未被使用)置换出去
+   * @param  {Object} cur 
+   * @return {[Number]} 
+   */
   function lru(cur) {
     var minTime = 1000000,
         ppage = -1,
@@ -334,7 +338,11 @@ jQuery(document).ready(function($) {
     }
     return ppage;
   }
-
+  /**
+   * fifo置换算法，从ppage_bitmap中找time值最小的页面（最早到来）置换出去
+   * @param  {Object} cur 
+   * @return {[Number]} 
+   */
   function fifo(cur) {
     var minTime = 1000000,
         ppage = -1,
@@ -348,6 +356,9 @@ jQuery(document).ready(function($) {
     return ppage;
   }
 
+  /**
+   * 释放指令流数据结构
+   */
   function clean() {
     ptr = null;
     cur = null;
@@ -363,6 +374,11 @@ jQuery(document).ready(function($) {
 
   }
 
+  /**
+   * 重置页表信息，当使用一种算法模拟后，如再使用第二种算法模拟，
+   * 需重置页表，但保留指令流初始化信息，这样，多种算法可以使用
+   * 一个指令流来进行比较
+   */
   function resetPageTable() {
     var i = 0,
         j = 0;
@@ -380,13 +396,23 @@ jQuery(document).ready(function($) {
     pfailNum = 0;
   }
 
+  /**
+   * 打印
+   * @param  {Number} num  
+   * @param  {Number} num1 
+   * @param  {Number} num2 
+   * @param  {Number} num3 
+   */
   function printMsg(num, num1, num2, num3) {
-    var Msg = '<tr> <th scope="row">'+ num +'</th> <td>'+ num1 +'</td> <td>'+ num2 +'</td> <td>'+ num3 +'</td> <td>'+ Page.VM_PAGE +'</td> <td>'+ Page.PM_PAGE +'</td> <td>'+ Page.TOTAL_INSTR +'</td> <td>'+ Page.INSTR_PER_PAGE +'</td> </tr>';
+    var Msg = '<tr> <th scope="row">'+ num +'</th> <td>'+ num1 +'</td> <td>'+ num2 +'</td> <td>'+ num3 +'</td> <td>'+ Page.PM_PAGE +'</td> <td>'+ Page.VM_PAGE +'</td> <td>'+ Page.INSTR_PER_PAGE +'</td> <td>'+ Page.TOTAL_INSTR +'</td> </tr>';
     $('#PageMsg').append(Msg);
   }
 
 
-
+  var num = 1,
+      num1,
+      num2,
+      num3;
 
   $('#addProcess').click(function(event) {
     Page.VM_PAGE = +$('#vmPage').val();
@@ -398,22 +424,19 @@ jQuery(document).ready(function($) {
     //产生指令流
 
     genInstrFlow();
-    // console.log(pfailNum);
     curReplaceAlg = Page.OPT;
     resetPageTable();
     num1 = run().toFixed(11);
-    // console.log("num1 = " + num1);
     curReplaceAlg = Page.FIFO;
     resetPageTable();
     num2 = run().toFixed(11);
     curReplaceAlg = Page.LRU;
     resetPageTable();
     num3 = run().toFixed(11);
-    // console.log(num1 + "----" + num2 + "----" + num3);
     printMsg(num++, num1, num2, num3);
     clean();
-  });
 
+  });
 
 
 });
