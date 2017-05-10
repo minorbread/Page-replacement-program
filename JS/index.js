@@ -17,13 +17,12 @@ jQuery(document).ready(function($) {
 	var pageTable = [],
       ppageBitmap = [],
       instrArray = [],
-      pfailNum,
-      curReplaceAlg;
-    	// pageTable.length = Page.VM_PAGE;			 
-    	// ppageBitmap.length = Page.PM_PAGE;		 
-    	// instrArray.length = Page.TOTAL_INSTR;
-    	pfailNum = 0;
+    	pfailNum = 0,
     	curReplaceAlg = 1;
+      num = 1,
+      num1,
+      num2,
+      num3;
 
 	/**
 	 * 页表项数据结构
@@ -79,6 +78,8 @@ jQuery(document).ready(function($) {
 		var i, 
 				j, 
 				k;
+    pageTable.length = 0;
+    instrArray.length = 0;
 		//虚页表初始化
 		for(i = 0; i < Page.VM_PAGE; i++){
 			pageTable.push(new VageItem(i, 0, 0, -1));
@@ -109,11 +110,6 @@ jQuery(document).ready(function($) {
          s;
 
     s = Math.floor(Math.random() * Page.TOTAL_INSTR);
-/*    for (var i = 0; i < 2000; i++) {
-      if(Math.floor((Math.random() * Page.TOTAL_INSTR))) {
-        console.log('hi');
-      }
-    }*/
     total += addToFlow(s);
     //如果s不是最后一条，顺序执行下一条指令
     if(s < Page.TOTAL_INSTR - 1){
@@ -223,7 +219,8 @@ jQuery(document).ready(function($) {
       cur = cur.next;
       chip++;
     }
-    console.log(pfailNum / iflowHead.num);
+    // console.log(pfailNum / iflowHead.num);
+    return (pfailNum / iflowHead.num);
   }
 
   /**
@@ -292,7 +289,7 @@ jQuery(document).ready(function($) {
   }
 
   function opt(cur) {
-    var found,
+    var found = 0,
         ppageHash = [],
         ptr = null,
         vpage,
@@ -300,7 +297,7 @@ jQuery(document).ready(function($) {
         exist,
         i,
         ret;
-    ppageHash = new Array(Page.PM_PAGE).join(0).split('');
+    ppageHash = (new Array(Page.PM_PAGE + 1)).join(0).split('');
     ptr = cur.next;
 
     //搜索指令流，判断哪个在物理内存中的虚页最久才被使用
@@ -383,18 +380,40 @@ jQuery(document).ready(function($) {
     pfailNum = 0;
   }
 
-  //初始化数据
-	initData();
-  //产生指令流
-  genInstrFlow();
-  curReplaceAlg = Page.OPT;
-  run();
-  curReplaceAlg = Page.FIFO;
-  resetPageTable();
-  run();
-  curReplaceAlg = Page.LRU;
-  resetPageTable();
-  run();
-  clean();
+  function printMsg(num, num1, num2, num3) {
+    var Msg = '<tr> <th scope="row">'+ num +'</th> <td>'+ num1 +'</td> <td>'+ num2 +'</td> <td>'+ num3 +'</td> <td>'+ Page.VM_PAGE +'</td> <td>'+ Page.PM_PAGE +'</td> <td>'+ Page.TOTAL_INSTR +'</td> <td>'+ Page.INSTR_PER_PAGE +'</td> </tr>';
+    $('#PageMsg').append(Msg);
+  }
+
+
+
+
+  $('#addProcess').click(function(event) {
+    Page.VM_PAGE = +$('#vmPage').val();
+    Page.PM_PAGE = +$('#pmPage').val();
+    Page.TOTAL_INSTR = +$('#totalInstr').val();
+    Page.INSTR_PER_PAGE = +$('#instrPerPage').val();
+    //初始化数据
+  	initData();
+    //产生指令流
+
+    genInstrFlow();
+    // console.log(pfailNum);
+    curReplaceAlg = Page.OPT;
+    resetPageTable();
+    num1 = run().toFixed(11);
+    // console.log("num1 = " + num1);
+    curReplaceAlg = Page.FIFO;
+    resetPageTable();
+    num2 = run().toFixed(11);
+    curReplaceAlg = Page.LRU;
+    resetPageTable();
+    num3 = run().toFixed(11);
+    // console.log(num1 + "----" + num2 + "----" + num3);
+    printMsg(num++, num1, num2, num3);
+    clean();
+  });
+
+
 
 });
