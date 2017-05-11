@@ -18,7 +18,8 @@ jQuery(document).ready(function($) {
       ppageBitmap = [],
       instrArray = [],
     	pfailNum = 0,
-    	curReplaceAlg = 1;
+    	curReplaceAlg = 1,
+      flag;
 
 	/**
 	 * 页表项数据结构
@@ -188,32 +189,37 @@ jQuery(document).ready(function($) {
     chip = 0;
     // 指令流中当前指令
     cur = iflowHead.next;
-    while(cur != null) {
-      //首先判断该指令是否物理内存中
-      vpage = cur.instr.vpage;
-      offset = cur.instr.offset;
-      //如果该指令不在物理内存中
-      if (pageTable[vpage].exist == 0) {
-        // 为其分配物理内存
-        ppage = allocPPage(cur, chip);
-        // 计算缺页率
-        pfailNum += 1;
-      } else {
-        //如果已经在内存中，根据置换算法更新页表项中time信息
-        //三种算法中，仅LRU需要更新
-        switch(curReplaceAlg){
-          case Page.LRU:
-            pageTable[vpage].time = chip;
-            break;
-          case Page.OPT:
-          case Page.FIFO:
-          default:
-            break;
-        }
+    try {
+      while(cur != null) {
+        //首先判断该指令是否物理内存中
+        vpage = cur.instr.vpage;
+        offset = cur.instr.offset;
+        //如果该指令不在物理内存中
+          if (pageTable[vpage].exist == 0) {
+            // 为其分配物理内存
+            ppage = allocPPage(cur, chip);
+            // 计算缺页率
+            pfailNum += 1;
+          } else {
+            //如果已经在内存中，根据置换算法更新页表项中time信息
+            //三种算法中，仅LRU需要更新
+            switch(curReplaceAlg){
+              case Page.LRU:
+                pageTable[vpage].time = chip;
+                break;
+              case Page.OPT:
+              case Page.FIFO:
+              default:
+                break;
+            }
+          }
+        //打印该指令物理地址
+        cur = cur.next;
+        chip++;
       }
-      //打印该指令物理地址
-      cur = cur.next;
-      chip++;
+    } catch(e) {
+      alert('参数设置输入错误');
+      return false;
     }
     return (pfailNum / iflowHead.num);
   }
@@ -404,8 +410,16 @@ jQuery(document).ready(function($) {
    * @param  {Number} num3 
    */
   function printMsg(num, num1, num2, num3) {
-    var Msg = '<tr> <th scope="row">'+ num +'</th> <td>'+ num1 +'</td> <td>'+ num2 +'</td> <td>'+ num3 +'</td> <td>'+ Page.PM_PAGE +'</td> <td>'+ Page.VM_PAGE +'</td> <td>'+ Page.INSTR_PER_PAGE +'</td> <td>'+ Page.TOTAL_INSTR +'</td> </tr>';
-    $('#PageMsg').append(Msg);
+    var msg = '<tr> <th scope="row">'+ num +'</th> <td>'+ num1 +'</td> <td>'+ num2 +'</td> <td>'+ num3 +'</td> <td>'+ Page.PM_PAGE +'</td> <td>'+ Page.VM_PAGE +'</td> <td>'+ Page.INSTR_PER_PAGE +'</td> <td>'+ Page.TOTAL_INSTR +'</td> </tr>';
+    $('#PageMsg').append(msg);
+  }
+
+  function printMes() {
+    var mes = '<h4>页面置换算法</h4> <table class="table table-hover"> <thead> <tr> <th>#</th> <th>OPT 算法缺页率</th> <th>FIFO 算法缺页率</th> <th>LRU 算法缺页率</th> <th>虚页面数</th> <th>物理页面数</th> <th>每页指令数</th> <th>指令条数</th> </tr> </thead> <tbody id="PageMsg"> </tbody> </table>';
+    if (!flag) {
+      $('#pageMes').append(mes);
+      flag = 1;
+    }
   }
 
 
@@ -415,6 +429,8 @@ jQuery(document).ready(function($) {
       num3;
 
   $('#addProcess').click(function(event) {
+
+    printMes();
     Page.VM_PAGE = +$('#vmPage').val();
     Page.PM_PAGE = +$('#pmPage').val();
     Page.TOTAL_INSTR = +$('#totalInstr').val();
@@ -426,14 +442,18 @@ jQuery(document).ready(function($) {
     genInstrFlow();
     curReplaceAlg = Page.OPT;
     resetPageTable();
-    num1 = run().toFixed(11);
-    curReplaceAlg = Page.FIFO;
-    resetPageTable();
-    num2 = run().toFixed(11);
-    curReplaceAlg = Page.LRU;
-    resetPageTable();
-    num3 = run().toFixed(11);
-    printMsg(num++, num1, num2, num3);
+    try {
+      num1 = run().toFixed(11);
+      curReplaceAlg = Page.FIFO;
+      resetPageTable();
+      num2 = run().toFixed(11);
+      curReplaceAlg = Page.LRU;
+      resetPageTable();
+      num3 = run().toFixed(11);
+      printMsg(num++, num1, num2, num3);
+    } catch (e) {
+      alert(' 虚页面数与每页指令数的乘积应大于指令条数');
+    }
     clean();
 
   });
